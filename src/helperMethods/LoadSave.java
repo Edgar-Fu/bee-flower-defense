@@ -2,15 +2,14 @@ package src.helperMethods;
 
 import static src.helperMethods.Constants.Enemies.*;
 import static src.helperMethods.Constants.Towers.*;
-import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.List;
 
 import javax.imageio.ImageIO;
 
@@ -69,9 +68,20 @@ public class LoadSave {
             }
         }
         
-
         BufferedImage img = null;
         InputStream is = LoadSave.class.getClassLoader().getResourceAsStream("res/" + unitString + ".png");
+        try{
+            img = ImageIO.read(is);
+        } catch (IOException e){
+            e.printStackTrace();
+        }
+        return img;
+    }
+
+    public static BufferedImage getProjectileImg(int projectileType){
+        
+        BufferedImage img = null;
+        InputStream is = LoadSave.class.getClassLoader().getResourceAsStream("res/Projectiles/Projectile " + (projectileType + 1) + ".png");
         try{
             img = ImageIO.read(is);
         } catch (IOException e){

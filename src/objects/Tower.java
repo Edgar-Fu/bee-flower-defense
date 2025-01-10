@@ -1,51 +1,35 @@
 package src.objects;
 
-import java.awt.image.BufferedImage;
-import java.util.ArrayList;
-
-import src.helperMethods.LoadSave;
+import static src.helperMethods.Constants.Direction.*;
 
 public class Tower {
-    private int x, y, id, towerType;
-    private ArrayList<ArrayList<BufferedImage>> animations = new ArrayList<ArrayList<BufferedImage>>();
-    private float dmg, range, cooldown;
+    private int x, y, id, towerType, dmg;
+    private float range, cooldown;
+    private int cdTick, attackTick;
+    private int direction = LEFT;
+    private boolean attacking = false;
 
     public Tower(int x, int y, int id, int towerType){
         this.x = x;
         this.y = y;
         this.id = id;
         this.towerType = towerType;
-        initAnimations();
         setDefaultDmg();
         setDefaultRange();
         setDefaultCooldown();
     }
 
-    private void initAnimations(){
-        BufferedImage img = LoadSave.getUnitImg(towerType, false);
-        
-        //idle animation
-        animations.add(animate(img, 0, 8));
-        //hit animation
-        animations.add(animate(img, 1, 3));
-        //attack animation
-        animations.add(animate(img, 2, 6));
-        //death animation
-        animations.add(animate(img, 3, 7));
+    public void update(){
+        cdTick++;
     }
 
-    private ArrayList<BufferedImage> animate(BufferedImage img, int animationType, int frames){
-        ArrayList<BufferedImage> animation = new ArrayList<>();
-        for(int i = 0; i < frames; i++){
-            animation.add(img.getSubimage(i * 64, animationType * 64, 64, 64));
-        }
-        return animation;
+    public boolean isCooldownOver(){
+        return cdTick >= cooldown;
     }
 
-    public ArrayList<BufferedImage> getAnimation(int animationType){
-        return animations.get(animationType);
+    public void resetCooldown(){
+        cdTick = 0;
     }
-
 
     public int getX(){
         return x;
@@ -63,7 +47,7 @@ public class Tower {
         return towerType;
     }
 
-    public float getDmg() {
+    public int getDmg() {
         return this.dmg;
     }
 
@@ -73,6 +57,14 @@ public class Tower {
 
     public float getCooldown() {
         return this.cooldown;
+    }
+
+    public float getDirection(){
+        return direction;
+    }
+
+    public boolean isAttacking(){
+        return attacking;
     }
 
     private void setDefaultDmg(){
@@ -85,5 +77,13 @@ public class Tower {
 
     private void setDefaultCooldown(){
         cooldown = src.helperMethods.Constants.Towers.GetDefaultCooldown(towerType);
+    }
+
+    public void setAttacking(boolean attacking){
+        this.attacking = attacking;
+    }
+
+    public void setDirection(int direction){
+        this.direction = direction;
     }
 }

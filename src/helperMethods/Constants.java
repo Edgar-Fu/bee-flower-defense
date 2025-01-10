@@ -4,6 +4,28 @@ import java.util.List;
 
 public class Constants {
 
+    public static class Projectiles{
+        public static final int NORMAL = 0;
+        public static final int FIREBALL = 1;
+        public static final int ICEBALL = 2;
+        public static final int OMNIBALL = 3;
+
+        public static float GetSpeed(int towerType){
+            switch (towerType) {
+                case NORMAL:
+                    return 5f;
+                case FIREBALL:
+                    return 4f;
+                case ICEBALL:
+                    return 3f;
+                case OMNIBALL:
+                    return 6f;
+                default:
+                    return 0;
+            }
+        }
+    }
+
     public static class Towers{
         public static final int WORKER = 0;
         public static final int FIRE = 1;
@@ -25,16 +47,16 @@ public class Constants {
             }
         }
 
-        public static float GetStartDmg(int towerType){
+        public static int GetStartDmg(int towerType){
             switch (towerType) {
                 case WORKER:
-                    return 5;
+                    return 8;
                 case FIRE:
-                    return 35;
+                    return 10;
                 case FROST:
-                    return 15;
+                    return 3;
                 case QUEEN:
-                    return 50;
+                    return 15;
                 default:
                     return 0;
             }
@@ -56,13 +78,13 @@ public class Constants {
         public static float GetDefaultCooldown(int towerType){
             switch (towerType) {
                 case WORKER:
-                    return 10;
+                    return 20;
                 case FIRE:
-                    return 10;
+                    return 20;
                 case FROST:
-                    return 10;
+                    return 20;
                 case QUEEN:
-                    return 10;
+                    return 20;
                 default:
                     return 0;
             }
@@ -85,13 +107,13 @@ public class Constants {
         public static float getSpeed(int enemyType){
             switch (enemyType) {
                 case HORNET:
-                    return 1.5f;
-                case BADGER:
-                    return 1f;
-                case RACCOON:
                     return 0.8f;
-                case BEAR:
+                case BADGER:
+                    return 0.7f;
+                case RACCOON:
                     return 0.6f;
+                case BEAR:
+                    return 0.5f;
                 default:
                     return 0;
             }

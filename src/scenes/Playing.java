@@ -8,9 +8,11 @@ import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 
 import src.helperMethods.LoadSave;
+import src.enemies.Enemy;
 import src.helperMethods.ImgFix;
 import src.main.Game;
 import src.manager.EnemyManager;
+import src.manager.ProjectileManager;
 import src.manager.TowerManager;
 import src.objects.Tower;
 import src.ui.ActionBar;
@@ -27,8 +29,9 @@ public class Playing extends GameScene implements SceneMethods{
 
     private EnemyManager enemyManager;
     private TowerManager towerManager;
-    private int animationIndex;
-    private int idleIndex;
+    private ProjectileManager projectileManager;
+    private int idleIndex, attackIndex;
+    private int projIndex = 3;
     private int tick;
     private int ANIMATION_SPEED = 5;
     private Tower selectedTower;
@@ -39,6 +42,7 @@ public class Playing extends GameScene implements SceneMethods{
         actionBar = new ActionBar(0, 640, 640, 100, this);
         enemyManager = new EnemyManager(this);
         towerManager = new TowerManager(this);
+        projectileManager = new ProjectileManager(this);
     }
 
     private void loadLevel(){
@@ -54,14 +58,16 @@ public class Playing extends GameScene implements SceneMethods{
         updateTick();
         enemyManager.update();
         towerManager.update();
+        projectileManager.update();
     }
 
     @Override
     public void render(Graphics g) {
         drawLevel(g);
         actionBar.draw(g);
-        enemyManager.draw(g, animationIndex);
-        towerManager.draw(g, idleIndex);
+        enemyManager.draw(g);
+        towerManager.draw(g, idleIndex, attackIndex);
+        projectileManager.draw(g, projIndex);
         drawSelectedTower(g);
     }
 
@@ -87,13 +93,19 @@ public class Playing extends GameScene implements SceneMethods{
         tick++;
         if(tick >= ANIMATION_SPEED){
             tick = 0;
-            animationIndex++;
             idleIndex++;
-            if(animationIndex >= 4)
-                animationIndex = 0;
+            attackIndex++;
+            projIndex++;
             if(idleIndex >= 8)
                 idleIndex = 0;
+            if(attackIndex >= 6)
+                attackIndex = 0;
+            if(projIndex >= 4)
+                projIndex = 0;
         }
+    }
+    public void shootEnemy(Tower t, Enemy e) {
+        projectileManager.newProjectile(t, e);
     }
 
     private void drawLevel(Graphics g){

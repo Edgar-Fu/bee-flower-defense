@@ -2,9 +2,12 @@ package src.manager;
 
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
 import src.enemies.*;
+import src.helperMethods.ImgFix;
+import src.helperMethods.LoadSave;
 import src.scenes.Playing;
 import static src.helperMethods.Constants.Direction.*;
 import static src.helperMethods.Constants.Enemies.*;
@@ -12,13 +15,17 @@ import static src.helperMethods.Constants.Tiles.*;
 
 public class EnemyManager {
     private Playing playing;
+    //Arraylist of all enemies present in the map
     private ArrayList<Enemy> enemies = new ArrayList<>();
-    //private float speed = 0.5f;
+    //3D array of all enemy sprites, going by spriteAnimations[enemyType][direction][animationIndex]
+    private BufferedImage[][][] spriteAnimations = new BufferedImage[4][4][4];
     private int[][] lvl;
+    private int walkTick;
     
     public EnemyManager(Playing playing){
         this.playing = playing;
         lvl = playing.getLevel();
+        initSprites();
         addEnemy(0 * 32, 15 * 32, HORNET);
         addEnemy(0 * 32, 15 * 32, BADGER);
         addEnemy(0 * 32, 15 * 32, RACCOON);
@@ -43,60 +50,94 @@ public class EnemyManager {
     }
 
     public void update(){
+        //speed of their walking animation
+        //increment walkTick, then divide by 6 to get the animation array index
+        walkTick++;
+        if(walkTick >= 24)
+            walkTick = 0;
+
         for(int i = 0; i < enemies.size(); i++){
             if(!enemies.get(i).isAlive()){
-                enemies.remove(i);
-                return;
+                enemies.remove(i--);
+                continue;
             }
             
             Pathfind(enemies.get(i));
         }
     }
 
-    public void draw(Graphics g, int animationIndex){
+    private void initSprites(){
+        for(int i = 0; i < 4; i++){
+            readFromSpritesheets(i);
+        }
+    }
+
+    private void readFromSpritesheets(int enemyType){
+        //get each enemy's spritesheet
+        BufferedImage img = LoadSave.getUnitImg(enemyType, true);
+
+        //coordinates in the spritesheet
+        int x = 0; //cycles through animation frames
+        int y = 0; //changes direction the enemy is facing
+        int z = 48;//length of one sprite's dimension (e.g. 32x32, 64x64)
+
+        switch (enemyType) {
+            case HORNET:
+                x = 6;
+                z = 64; //z only changes for hornets, which have different sized sprites
+                break;
+            case BADGER:
+            case BEAR:
+                x = 3;
+                y = 4;
+                break;
+        }
+
+        //get the correct sprites for each direction
+        if(enemyType != HORNET){
+            spriteAnimations[enemyType][LEFT] = animate(img, x, y + 1, z);
+            spriteAnimations[enemyType][UP] = animate(img, x, y + 3, z);
+            spriteAnimations[enemyType][RIGHT] = animate(img, x, y + 2, z);
+            spriteAnimations[enemyType][DOWN] = animate(img, x, y, z);
+        }
+        else{
+            spriteAnimations[enemyType][LEFT] = ImgFix.getFlipped(animate(img, x, y, z));
+            spriteAnimations[enemyType][RIGHT] = animate(img, x, y, z);
+        }
+    }
+
+    //create the animation array
+    private BufferedImage[] animate(BufferedImage img, int x, int y, int z){
+        BufferedImage[] animation = new BufferedImage[4];
+        animation[0] = img.getSubimage(x * z, y * z, z, z);
+        animation[1] = img.getSubimage((x + 1) * z, y * z, z, z);
+        animation[2] = img.getSubimage((x + 2) * z, y * z, z, z);
+        animation[3] = img.getSubimage((x + 1) * z, y * z, z, z);
+        return animation;
+    }
+
+    //drawing methods
+    public void draw(Graphics g){
         for(Enemy e : enemies){
-            drawEnemy(e, g, animationIndex);
+            drawEnemy(e, g);
             drawHealthBar(e, g);
         }
     }
 
-    private int[] enemyOffsetHandler(Enemy e){
-        int[] newCoordinates = new int[2];
-        int x = (int) e.getX();
-        int y = (int) e.getY();
-
-        //handling image offsets from different sized sprites
-        switch (e.getEnemyType()) {
-            case HORNET:
-                y -= 24;
-                if(e.getHornetFacing() == RIGHT)
-                    x -= 20;
-                else
-                    x -= 12;
-                break;
-            case BADGER:
-                x -= 5;
-                y -= 30;
-                break;
-            case RACCOON:
-                x -= 8;
-                y -= 30;
-                break;
-            case BEAR:
-                x -= 10;
-                y -= 30;
-                break;
-        }
-
-        newCoordinates[0] = x;
-        newCoordinates[1] = y;
-
-        return newCoordinates;
-    }
-
-    private void drawEnemy(Enemy e, Graphics g, int animationIndex){
+    private void drawEnemy(Enemy e, Graphics g){
         int[] coordinates = enemyOffsetHandler(e);
-        g.drawImage(e.getAnimation()[animationIndex], coordinates[0], coordinates[1], null);
+        int direction = e.getLastDir();
+
+        if(e.getEnemyType() == HORNET)
+            direction = e.getHornetFacing();
+
+        g.drawImage(spriteAnimations[e.getEnemyType()][direction][walkTick / 6], coordinates[0], coordinates[1], null);
+
+        
+        //hitbox viewer
+        g.setColor(Color.black);
+        g.drawRect(e.getBounds().x, e.getBounds().y, e.getBounds().width, e.getBounds().height);
+        
     }
 
     private void drawHealthBar(Enemy e, Graphics g){
@@ -113,10 +154,59 @@ public class EnemyManager {
         }
 
         g.setColor(Color.red);
-        System.out.println((int) e.getHealthBar() * 28 + "px");
         g.fillRect(x + 2, y, (int) (e.getHealthBar() * 28), 5);
     }
 
+    //handling image offsets so every enemy is centered
+    public int[] enemyOffsetHandler(Enemy e){
+        int[] newCoordinates = new int[2];
+        int x = (int) e.getX();
+        int y = (int) e.getY();
+
+        if(e.getEnemyType() == HORNET){
+            y -= 20;
+            if(e.getHornetFacing() == RIGHT)
+                x -= 20;
+            else
+                x -= 12;
+        }
+        else if(e.getLastDir() == RIGHT || e.getLastDir() == LEFT){
+            y -= 24;
+            switch (e.getEnemyType()) {
+                case BADGER:
+                    x -= 5;
+                    break;
+                case RACCOON:
+                    x -= 8;
+                    break;
+                case BEAR:
+                    x -= 5;
+                    break;
+            }
+        }
+        else{
+            y -= 14;
+            switch (e.getEnemyType()) {
+                case BADGER:
+                    x -= 5;
+                    break;
+                case RACCOON:
+                    x -= 8;
+                    break;
+                case BEAR:
+                    x -= 9;
+                    break;
+            }
+        }
+        
+
+        newCoordinates[0] = x;
+        newCoordinates[1] = y;
+
+        return newCoordinates;
+    }
+
+    //pathfinding methods and helpers
     private void Pathfind(Enemy e){
         //Enemy's current coordinates, rounded to a whole number
         int x = (int) e.getX() / 32;

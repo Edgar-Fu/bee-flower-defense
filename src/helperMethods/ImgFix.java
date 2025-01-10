@@ -37,7 +37,8 @@ public class ImgFix {
     public static BufferedImage[] getFlipped(BufferedImage[] imgs){
         BufferedImage[] flippedImgs = new BufferedImage[imgs.length];
         for(int i = 0; i < flippedImgs.length; i++){
-            flippedImgs[i] = getFlipped(imgs[i]);
+            if(imgs[i] != null)
+                flippedImgs[i] = getFlipped(imgs[i]);
         }
 
         return flippedImgs;
