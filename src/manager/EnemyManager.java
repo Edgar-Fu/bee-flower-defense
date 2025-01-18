@@ -17,7 +17,7 @@ public class EnemyManager {
     private Playing playing;
     //Arraylist of all enemies present in the map
     private ArrayList<Enemy> enemies = new ArrayList<>();
-    //3D array of all enemy sprites, going by spriteAnimations[enemyType][direction][animationIndex]
+    //3D array of all enemy sprites, going by spriteAnimations[enemyType][direction][frame]
     private BufferedImage[][][] spriteAnimations = new BufferedImage[4][4][4];
     private int[][] lvl;
     private int walkTick;
@@ -26,10 +26,7 @@ public class EnemyManager {
         this.playing = playing;
         lvl = playing.getLevel();
         initSprites();
-        addEnemy(0 * 32, 15 * 32, HORNET);
-        addEnemy(0 * 32, 15 * 32, BADGER);
-        addEnemy(0 * 32, 15 * 32, RACCOON);
-        addEnemy(0 * 32, 15 * 32, BEAR);
+        
     }
 
     public void addEnemy(int x, int y, int enemyType){
@@ -61,7 +58,6 @@ public class EnemyManager {
                 enemies.remove(i--);
                 continue;
             }
-            
             Pathfind(enemies.get(i));
         }
     }
@@ -131,13 +127,10 @@ public class EnemyManager {
         if(e.getEnemyType() == HORNET)
             direction = e.getHornetFacing();
 
+        //System.out.print(direction);
         g.drawImage(spriteAnimations[e.getEnemyType()][direction][walkTick / 6], coordinates[0], coordinates[1], null);
 
-        
-        //hitbox viewer
-        g.setColor(Color.black);
-        g.drawRect(e.getBounds().x, e.getBounds().y, e.getBounds().width, e.getBounds().height);
-        
+        //drawHitbox(e, g);
     }
 
     private void drawHealthBar(Enemy e, Graphics g){
@@ -146,20 +139,28 @@ public class EnemyManager {
 
         if(e.getEnemyType() == HORNET)
             y -= 28;
-        else if(e.getLastDir() == UP || e.getLastDir() == DOWN)
-            y -= 24;
         else{
-            x = enemyOffsetHandler(e)[0] + 8;
-            y -= 12;
+            if(e.getEnemyType() == BEAR)
+                y -= 12;
+            else
+                y -= 8;
         }
+
+        g.setColor(Color.black);
+        //g.drawRect(x + 2, y, 28, 5);
+        g.fillRect(x + 2, y, 28, 5);
 
         g.setColor(Color.red);
         g.fillRect(x + 2, y, (int) (e.getHealthBar() * 28), 5);
     }
 
+    private void drawHitbox(Enemy e, Graphics g){
+        g.setColor(Color.black);
+        g.drawRect(e.getBounds().x, e.getBounds().y, e.getBounds().width, e.getBounds().height);
+    }
+
     //handling image offsets so every enemy is centered
     public int[] enemyOffsetHandler(Enemy e){
-        int[] newCoordinates = new int[2];
         int x = (int) e.getX();
         int y = (int) e.getY();
 
@@ -198,12 +199,8 @@ public class EnemyManager {
                     break;
             }
         }
-        
 
-        newCoordinates[0] = x;
-        newCoordinates[1] = y;
-
-        return newCoordinates;
+        return new int[]{x, y};
     }
 
     //pathfinding methods and helpers
@@ -233,8 +230,11 @@ public class EnemyManager {
             e.move(getSpeed(e.getEnemyType()), e.getLastDir());
         }
         //if it can't go straight, look for a turn
-        else
-            checkForTurn(e, x, y);
+        //if all those options fail it has reached the end
+        else if(!checkForTurn(e, x, y))
+            e.kill();
+            
+        
     }
 
     private boolean canGoStraight(Enemy e, int x, int y){
@@ -261,7 +261,7 @@ public class EnemyManager {
         return false;
     }
 
-    private void checkForTurn(Enemy e, int x, int y){
+    private boolean checkForTurn(Enemy e, int x, int y){
         /*
         for each potential next direction, there are 3 if cases
             1. check if the enemy just came from there. if it did, then don't go back
@@ -273,20 +273,22 @@ public class EnemyManager {
         //System.out.println("Weighing options");
         if(e.getLastDir() != LEFT && x + 1 < lvl.length && pathTiles.contains(lvl[y][x + 1])){
             e.move(getSpeed(e.getEnemyType()), RIGHT);
-            //System.out.println("Right");
+            return true;
         }
         else if(e.getLastDir() != RIGHT && x - 1 >= 0 && pathTiles.contains(lvl[y][x - 1])){
             e.move(getSpeed(e.getEnemyType()), LEFT);
-            //System.out.println("Left");
+            return true;
         }
         else if(e.getLastDir() != UP && y + 1 < lvl.length && pathTiles.contains(lvl[y + 1][x])){
             e.move(getSpeed(e.getEnemyType()), DOWN);
-            //System.out.println("Down");
+            return true;
         }
         else if(e.getLastDir() != DOWN && y - 1 >= 0 && pathTiles.contains(lvl[y - 1][x])){
             e.move(getSpeed(e.getEnemyType()), UP);
-            //System.out.println("Up");
+            return true;
         }
+        else
+            return false;
     }
 
     public ArrayList<Enemy> getEnemies(){

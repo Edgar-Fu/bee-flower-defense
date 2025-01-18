@@ -43,7 +43,9 @@ public class ProjectileManager {
             if(e.getBounds().contains(p.getPos())){
                 e.takeDamage(p.getDamage());
                 if(p.getProjectileType() == ICEBALL)
-                    //e.slow();
+                    e.slow();
+                else if(p.getProjectileType() == FIREBALL)
+                    e.burn();
                 return true;
             }
         }

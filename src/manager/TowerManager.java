@@ -16,12 +16,15 @@ public class TowerManager {
     private Playing playing;
     //Arraylist of all the towers on the map
     private ArrayList<Tower> towers = new ArrayList<>();
-
+    //3D array of all tower sprites, going by spriteAnimations[towerType][animationType][frame]
     private BufferedImage[][][] spriteAnimations = new BufferedImage[4][4][8];
 
     private int towerAmount = 0;
     private final int xOffset = 16;
     private final int yOffset = 32;
+
+    private int attackTick;
+    private int idleTick;
 
     public TowerManager(Playing playing){
         this.playing = playing;
@@ -29,6 +32,13 @@ public class TowerManager {
     }
 
     public void update(){
+        attackTick++;
+        idleTick++;
+        if(attackTick >= 30)
+            attackTick = 0;
+        if(idleTick >= 45)
+            idleTick = 0;
+
         for(Tower t : towers){
             t.update();
             attack(t);
@@ -72,7 +82,7 @@ public class TowerManager {
         return animation;
     }
 
-    public void draw(Graphics g, int idleIndex, int attackIndex){
+    public void draw(Graphics g){
         for(Tower t : towers){
             BufferedImage img;
             
@@ -80,21 +90,21 @@ public class TowerManager {
             if(!t.isAttacking()){
                 //left
                 if(t.getDirection() == LEFT)
-                    img = spriteAnimations[t.getTowerType()][0][idleIndex];
+                    img = spriteAnimations[t.getTowerType()][0][idleTick / 6];
                 //right
                 else
-                    img = spriteAnimations[t.getTowerType()][1][idleIndex];
+                    img = spriteAnimations[t.getTowerType()][1][idleTick / 6];
             }
             //attack
             else{
                 //left
                 if(t.getDirection() == LEFT){
                     //System.out.print(attackIndex);
-                    img = spriteAnimations[t.getTowerType()][2][attackIndex];
+                    img = spriteAnimations[t.getTowerType()][2][attackTick / 6];
                 }
                 //right
                 else
-                    img = spriteAnimations[t.getTowerType()][3][attackIndex];
+                    img = spriteAnimations[t.getTowerType()][3][attackTick / 6];
             }
 
             g.drawImage(img, t.getX() - xOffset, t.getY() - yOffset, null);

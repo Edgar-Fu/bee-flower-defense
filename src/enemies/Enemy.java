@@ -11,6 +11,13 @@ public abstract class Enemy {
     private int currHealth, maxHealth, id, enemyType, lastDir;
     private int hornetFacing = RIGHT;
     private boolean isAlive = true;
+
+    //change these to affect duration of slows and burns
+    private int slowTickLimit = 120;
+    private int burnTickLimit = 360;
+
+    private int slowTick = slowTickLimit;
+    private int burnTick = burnTickLimit;
     
 
     public Enemy(float x, float y, int id, int enemyType){
@@ -19,7 +26,7 @@ public abstract class Enemy {
         this.id = id;
         this.enemyType = enemyType;
         bounds = new Rectangle((int) x, (int) y, 32, 32);
-        lastDir = -1;
+        lastDir = RIGHT;
         setStartHealth();
     }
 
@@ -30,6 +37,24 @@ public abstract class Enemy {
             isAlive = false;
     }
 
+    public void slow(){
+        slowTick = 0;
+    }
+
+    public void burn(){
+        burnTick = 0;
+    }
+
+    private void dealBurnDamage(){
+        //deal damage over time
+        if(burnTick < burnTickLimit){
+            burnTick++;
+            //damage every 1 second
+            if(burnTick % 60 == 0)
+                takeDamage(5);
+        }
+    }
+
     public void move(float speed, int direction){
         lastDir = direction;
 
@@ -38,6 +63,14 @@ public abstract class Enemy {
         if(enemyType == HORNET)
             if(direction != UP && direction != DOWN)
                 hornetFacing = direction;
+
+        //slows enemy speed
+        if(slowTick < slowTickLimit){
+            slowTick++;
+            speed *= 0.5f;
+        }
+
+        dealBurnDamage();
 
         switch(direction){
             case LEFT:
@@ -63,6 +96,10 @@ public abstract class Enemy {
     public void updateHitbox(){
         bounds.x = (int) x;
         bounds.y = (int) y;
+    }
+
+    public void kill(){
+        isAlive = false;
     }
 
     public float getX() {

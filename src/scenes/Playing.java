@@ -14,6 +14,7 @@ import src.main.Game;
 import src.manager.EnemyManager;
 import src.manager.ProjectileManager;
 import src.manager.TowerManager;
+import src.manager.WaveManager;
 import src.objects.Tower;
 import src.ui.ActionBar;
 
@@ -30,7 +31,8 @@ public class Playing extends GameScene implements SceneMethods{
     private EnemyManager enemyManager;
     private TowerManager towerManager;
     private ProjectileManager projectileManager;
-    private int idleIndex, attackIndex;
+    private WaveManager waveManager;
+
     private int projIndex = 3;
     private int tick;
     private int ANIMATION_SPEED = 5;
@@ -43,6 +45,7 @@ public class Playing extends GameScene implements SceneMethods{
         enemyManager = new EnemyManager(this);
         towerManager = new TowerManager(this);
         projectileManager = new ProjectileManager(this);
+        waveManager = new WaveManager(this);
     }
 
     private void loadLevel(){
@@ -56,6 +59,12 @@ public class Playing extends GameScene implements SceneMethods{
 
     public void update(){
         updateTick();
+        waveManager.update();
+
+        
+
+        if(timeToSpawn())
+            spawnEnemy();
         enemyManager.update();
         towerManager.update();
         projectileManager.update();
@@ -66,7 +75,7 @@ public class Playing extends GameScene implements SceneMethods{
         drawLevel(g);
         actionBar.draw(g);
         enemyManager.draw(g);
-        towerManager.draw(g, idleIndex, attackIndex);
+        towerManager.draw(g);
         projectileManager.draw(g, projIndex);
         drawSelectedTower(g);
     }
@@ -93,13 +102,7 @@ public class Playing extends GameScene implements SceneMethods{
         tick++;
         if(tick >= ANIMATION_SPEED){
             tick = 0;
-            idleIndex++;
-            attackIndex++;
             projIndex++;
-            if(idleIndex >= 8)
-                idleIndex = 0;
-            if(attackIndex >= 6)
-                attackIndex = 0;
             if(projIndex >= 4)
                 projIndex = 0;
         }
@@ -124,6 +127,19 @@ public class Playing extends GameScene implements SceneMethods{
         }
     }
 
+    private void spawnEnemy(){
+        enemyManager.addEnemy(0 * 32, 15 * 32, waveManager.getNextEnemy());
+    }
+
+    private boolean timeToSpawn(){
+        if(waveManager.spawnDelayOver()){
+            if(waveManager.isMoreEnemies()){
+                return true;
+            }
+        }
+        return false;
+    }
+
     //Getters and Setters
 
     private BufferedImage getSprite(int spriteID){
@@ -144,6 +160,10 @@ public class Playing extends GameScene implements SceneMethods{
 
     public EnemyManager getEnemyManager(){
         return enemyManager;
+    }
+
+    public WaveManager getWaveManager(){
+        return waveManager;
     }
 
     public void setSelectedTower(Tower selectedTower){
